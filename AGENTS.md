@@ -1,5 +1,5 @@
 # AGENTS.md — LLM Knowledge Base Schema
-> Version: 1.0.0 | Status: Stable | Last updated: 2026-04-05
+> Version: 1.1.0 | Status: Stable | Last updated: 2026-04-06
 
 This file is the **single source of truth** for any LLM agent operating on this knowledge base. It defines the directory structure, file conventions, operational rules, and quality standards the agent must follow. The agent reads this file at the start of every session.
 
@@ -23,6 +23,8 @@ This file is the **single source of truth** for any LLM agent operating on this 
 │   ├── concepts/      ← one .md per named concept
 │   ├── summaries/     ← one .md per raw/ source document
 │   └── topics/        ← topic-level overview articles (cross-concept)
+├── insights/          ← human-written notes only. Agent never writes here.
+│   └── *.md           ← your own thinking: observations, connections, questions
 ├── output/            ← query results, slides, charts (agent writes, human reads)
 │   ├── reports/
 │   ├── slides/        ← Marp .md files
@@ -39,7 +41,9 @@ This file is the **single source of truth** for any LLM agent operating on this 
 
 The agent is the **sole author and maintainer** of everything under `wiki/`, `output/`, and `learning/`. The human never edits these directories directly.
 
-The agent **never modifies** anything under `raw/`. Raw files are immutable inputs.
+The agent **never modifies** anything under `raw/` or `insights/`. Raw files are immutable source inputs. Insights files are immutable human outputs — your own thinking, not the agent's synthesis.
+
+The distinction matters: `wiki/` contains what the LLM compiled. `insights/` contains what you actually thought. A summary of a source is noise. An insight you formed from reading it is signal. These belong in different directories with different authorship rules.
 
 The agent **always reads** `AGENTS.md` before any operation. If the schema has changed since the last session, it adapts immediately.
 
@@ -242,6 +246,7 @@ filed_back: false   # set to true if the agent incorporates this output into the
 - **One concept per file.** Articles that cover two distinct concepts must be split.
 - **Backlinks are bidirectional.** If A links to B, B must link back to A in its frontmatter.
 - **Output ≠ wiki.** Files in `output/` are query artifacts. They are not wiki articles. The agent must explicitly decide to `filed_back: true` and write the insight into the appropriate wiki file.
+- **Never write to `insights/`.** This directory is reserved exclusively for human-written notes. Agent-generated content — even high-confidence, well-sourced synthesis — does not belong here. The separation is the point.
 
 ---
 
@@ -274,6 +279,7 @@ This file follows semantic versioning. The agent checks the version header on ev
 
 | Version | Changes |
 |---|---|
+| 1.1.0 | Added `insights/` directory (human-written only, agent never writes here). Updated §2 and §11 to enforce the authorship boundary. Added two-vault model as primary setup recommendation. |
 | 1.0.0 | Initial release. Core directory layout, compilation, query, lint, learning layer. |
 
 When the human updates `AGENTS.md`, the agent adapts immediately and notes the version change in its session startup output.

@@ -2,7 +2,7 @@
 
 > Built by **[Artur Ferreira](https://github.com/arturseo-geo)** @ **The GEO Lab** · [𝕏 @TheGEO_Lab](https://x.com/TheGEO_Lab) · [LinkedIn](https://linkedin.com/in/arturgeo) · [Reddit](https://www.reddit.com/user/Alternative_Teach_74/)
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
 ![Schema](https://img.shields.io/badge/schema-AGENTS.md-blueviolet)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/arturseo-geo/llm-knowledge-base/blob/main/CONTRIBUTING.md)
@@ -25,6 +25,7 @@ The core idea: you collect raw source material. The LLM compiles it into a struc
 | [`docs/why-not-rag.md`](./docs/why-not-rag.md) | When to use a compiled wiki vs a vector RAG stack |
 | [`docs/learning-layer.md`](./docs/learning-layer.md) | How the spaced repetition and gap tracking system works |
 | [`docs/contamination-mitigation.md`](./docs/contamination-mitigation.md) | Preventing quality degradation in agent-generated wikis |
+| [`docs/two-vault-setup.md`](./docs/two-vault-setup.md) | Obsidian two-vault setup: agent vault vs personal vault |
 | [`docs/finetune-path.md`](./docs/finetune-path.md) | Turning your wiki into a fine-tuning corpus |
 
 ---
@@ -161,14 +162,19 @@ At scale (millions of documents, heterogeneous corpora, sub-second latency requi
 
 ## Contamination mitigation
 
-Agent-generated content carries quality risk. The schema implements a sandbox-first model:
+Agent-generated content carries quality risk — and in Obsidian, the risk goes beyond content quality. Obsidian's search, graph, backlinks, and quick switcher all operate at the vault level. Once agent-compiled articles mix with your personal notes, Obsidian stops being a representation of your knowledge and becomes a representation of the LLM's synthesis.
+
+The primary solution is the **two-vault model**: one Obsidian vault for the agent (full schema), one for your personal notes (`insights/` — human-written only, agent never touches it). See [`docs/two-vault-setup.md`](./docs/two-vault-setup.md) for the full setup guide.
+
+For single-repo setups, the schema enforces a sandbox-first model:
 
 - The LLM writes freely to `output/` and `learning/`
 - Promotion to `wiki/` requires either explicit instruction or passing the quality rules in `AGENTS.md §11`
+- The agent **never writes to `insights/`** — this directory is human-only by schema rule
 - Articles with `confidence: speculative` are not linked into the graph until upgraded
 - The linting workflow quarantines contradictory articles with a `status: quarantined` flag
 
-Think of it like a data pipeline: `output/` is staging, `wiki/` is production.
+The distinction Steph Ango (@kepano) put precisely: a summary of a PDF is noise. An insight you formed from reading it is signal. The schema keeps them in separate directories with separate authorship rules.
 
 ---
 
@@ -200,13 +206,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Schema version
 
-Current: **1.0.0** — see [CHANGELOG.md](./CHANGELOG.md) for full history.
+Current: **1.1.0** — see [CHANGELOG.md](./CHANGELOG.md) for full history.
 
 ---
 
 ## Related
 
-- [Andrej Karpathy's original post](https://x.com/karpathy) — the workflow that inspired this
+- [Andrej Karpathy's original post](https://x.com/karpathy/status/2039805659525644595) — the workflow that inspired this
+- [Karpathy's follow-up gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) — full architecture, philosophy, and tooling
+- [Steph Ango on contamination and vault separation](https://x.com/kepano/status/2039831289533227446) — the two-vault model and insight vs noise distinction, by Obsidian's co-creator
 - [Obsidian Spaced Repetition plugin](https://github.com/st3v3nmw/obsidian-spaced-repetition) — manual flashcards in Obsidian; this schema automates generation
 - [Project Second Brain](https://layerbylayer.ai/posts/2026_02_11_project_second_brain/) — a more complex implementation with Neo4j and a web app
 - [awesome-llm-knowledge-bases](https://github.com/SingggggYee/awesome-llm-knowledge-bases) — curated tool list for the ecosystem

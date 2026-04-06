@@ -1,77 +1,46 @@
 # Contamination mitigation
 
-When an LLM writes and maintains your knowledge base, a new failure mode emerges that doesn't exist in human-curated wikis: **contamination** — the gradual degradation of wiki quality through unchecked agent-generated content.
+In the 1940s, nuclear weapons testing contaminated nearly all steel produced after the detonations with elevated background radiation. Sensitive instruments now require "low-background steel" — metal that was smelted before 1945, often salvaged from pre-war shipwrecks. The contamination was invisible, pervasive, and irreversible in the general supply.
 
-This doc describes how contamination happens, what it looks like, and the concrete patterns this schema uses to prevent it.
+Steph Ango (@kepano), co-creator of Obsidian, made the same analogy for LLM-generated content: the training data contamination from synthetic text is the new low-background steel problem. Once agent-generated content mixes with human-created knowledge, it's difficult to know which ideas are yours, which are sourced, and which are confabulated.
 
----
-
-## What contamination looks like
-
-Contamination is not dramatic. It doesn't look like obviously wrong information. It looks like:
-
-- A concept article that confidently synthesises two sources that actually contradict each other, with no flag
-- A summary that accurately reflects one paper but generalises it to a claim the paper doesn't support
-- A backlink that's plausible but wrong — connecting two concepts that aren't actually related in the way implied
-- An article written by the agent during a speculative query that gets filed back into the wiki as if it were well-sourced
-- Confidence levels that drift upward over time as the agent cites its own previous articles as sources
-
-None of these are obvious errors. They're plausible content that gradually erodes the reliability of the knowledge base. A linting pass months later may catch some of them — but by then, the contaminated articles have been cited in new articles, spreading the error.
+This doc describes how contamination happens in an LLM knowledge base, why it's particularly destructive in Obsidian, and the concrete patterns this schema uses to prevent it.
 
 ---
 
-## The core problem: LLMs are confident
+## Why contamination is worse in Obsidian than you think
 
-Language models don't naturally express uncertainty. When asked to write a concept article, a model will produce fluent, confident prose regardless of whether the source material is thin, contradictory, or absent. This is useful for generating readable content — it's a problem when that content enters a knowledge base as authoritative.
+Most discussions of contamination focus on content quality — wrong facts, circular citations, hallucinated sources. Those are real. But Steph Ango identified a subtler problem specific to Obsidian: contamination corrupts the *tool itself*, not just the content.
 
-The schema addresses this through structural constraints rather than prompt engineering. You can't reliably instruct a model to "be uncertain when appropriate." You can build a schema that makes the uncertainty visible and traceable.
+Obsidian's search, graph view, backlinks, quick switcher, and Bases all operate at the vault level. They don't distinguish between human-written notes and agent-compiled articles. Once agent content enters your personal vault, every search result, every graph node, every backlink suggestion is polluted with content that may not represent your thinking at all.
 
----
+The result: Obsidian stops being a representation of your knowledge and becomes a representation of your LLM's synthesis. Those are different things. Search is no longer scoped to your knowledge. The graph no longer maps your thinking. Backlinks surface connections the agent made, not connections you made.
 
-## The sandbox-first model
-
-The primary contamination control in this schema is **sandbox-first promotion**.
-
-The agent writes freely to two directories:
-- `output/` — query results, reports, slides, figures
-- `learning/` — flashcards, review queue, gap tracking
-
-It writes to `wiki/` only when it has met the quality rules in `AGENTS.md §11` or received explicit instruction from the human.
-
-Think of it like a data pipeline:
-
-```
-raw/          →   output/     →   wiki/
-(immutable)       (staging)       (production)
-```
-
-Content in `output/` is an artifact of a query session. It's useful, readable, and often accurate — but it hasn't been validated. Promotion to `wiki/` is a deliberate step.
-
-The agent marks every output report with `filed_back: false` by default. When a query produces a finding worth incorporating into the wiki, the agent explicitly lists which wiki files to update and waits for confirmation (or instruction to proceed) before writing to `wiki/`.
+This is why the two-vault model is the **primary recommended setup**, not an optional enhancement.
 
 ---
 
-## The clean vault / messy vault pattern
+## The two-vault model (primary setup)
 
-For users who want a stricter separation, the schema supports a two-vault model popularised by Obsidian's co-creator:
+Keep two completely separate Obsidian vaults:
 
-**Messy vault** — the agent's working environment. Contains `raw/`, `output/`, `learning/`, and draft wiki articles. The agent writes here freely. This is where exploration happens.
+**Agent vault** — the LLM's working environment. Contains the full schema: `raw/`, `wiki/`, `output/`, `learning/`. The agent reads and writes here freely. This is where compilation, linting, Q&A, and flashcard generation happen. Your Obsidian search, graph, and backlinks in this vault reflect the compiled knowledge base.
 
-**Clean vault** — the curated knowledge base. Contains only `wiki/` articles that have been explicitly promoted. The human reviews and approves each promotion. This vault is authoritative.
+**Personal vault** — your knowledge, scoped to your thoughts. Contains only `insights/` — notes you wrote yourself. Nothing agent-generated enters here unless you deliberately copy a specific artifact you've validated and made your own. Your Obsidian search, graph, and backlinks in this vault reflect only your thinking.
 
-In Obsidian, these are two separate vaults. The agent operates on the messy vault. The clean vault is the one you trust, share, and build on for high-stakes use.
+Promotion from the agent vault to the personal vault is the highest-value action in the workflow. It happens rarely and deliberately: only when a compiled article, flashcard session, or query output has produced something you genuinely understand and want to own. A summary of a PDF is noise. An insight you formed from engaging with the compiled wiki is signal.
 
-To implement this, add to `AGENTS.md`:
+To implement: create two separate Obsidian vaults on your filesystem. Point the agent at the agent vault. Keep the personal vault entirely human-written.
 
-```markdown
-## Vault model
+---
 
-This repo uses a two-vault model:
-- `messy/` — agent working environment, free writes permitted
-- `clean/` — curated wiki, promotion requires explicit human approval
+## The single-repo model (simpler alternative)
 
-The agent never writes directly to `clean/`. It proposes promotions by appending to `output/promotion-queue.md`.
-```
+If you're not using Obsidian, or prefer a single repository, the schema's `insights/` directory provides a lighter version of the same separation.
+
+The rule is absolute: **the agent never writes to `insights/`**. This directory is human-only. Everything else — `wiki/`, `output/`, `learning/` — is agent territory.
+
+The tradeoff: in Obsidian, your search and graph will still include agent-compiled content alongside your insights. Use Obsidian's "Excluded files" setting to exclude `wiki/`, `output/`, and `learning/` from search and graph if you want cleaner scoping. The two-vault model is cleaner.
 
 ---
 
@@ -183,8 +152,9 @@ Run linting regularly — at minimum, every time the wiki doubles in size. For a
 
 | Control | What it prevents |
 |---|---|
+| Two-vault model (primary) | Agent content ever entering your personal vault or corrupting Obsidian's search/graph |
+| `insights/` directory (agent-never-writes) | Agent synthesis mixing with human thinking in a single repo |
 | Sandbox-first promotion | Unreviewed query artifacts entering the wiki |
-| Two-vault model (optional) | Any agent write to the authoritative vault without human approval |
 | Confidence levels | Thin or speculative content being treated as authoritative |
 | Speculative articles excluded from graph | Speculation propagating through backlinks |
 | Quarantine flag | Contradictions spreading into new articles |
@@ -196,6 +166,9 @@ None of these controls are perfect in isolation. Together, they make contaminati
 
 ---
 
+*The two-vault model and the insight/noise distinction were articulated by Steph Ango (@kepano), co-creator of Obsidian, in response to Andrej Karpathy's April 2026 LLM Knowledge Bases post.*
+
 *For the full quality rules spec, see `AGENTS.md §11`.*
 *For the linting workflow, see `AGENTS.md §8`.*
 *For the sandbox promotion model, see `AGENTS.md §12`.*
+*For a practical Obsidian two-vault setup guide, see `docs/two-vault-setup.md`.*

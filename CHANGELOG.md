@@ -10,6 +10,24 @@ Agents check the version header in `AGENTS.md` on every session startup and adap
 
 ---
 
+## [1.1.0] — 2026-04-06
+
+Prompted by Steph Ango (@kepano, co-creator of Obsidian) on the insight/noise distinction and the Obsidian-specific contamination problem.
+
+### Added
+- `insights/` directory to the schema — human-written notes only, agent never writes here
+- `docs/two-vault-setup.md` — practical guide for the Obsidian two-vault model
+- Two-vault model promoted to primary recommended setup
+
+### Changed
+- `AGENTS.md §1` — `insights/` added to directory layout
+- `AGENTS.md §2` — agent scope updated: never modifies `raw/` or `insights/`; insight vs summary distinction explained
+- `AGENTS.md §11` — new rule: agent never writes to `insights/`
+- `docs/contamination-mitigation.md` — restructured around nuclear steel analogy; adds Obsidian-specific vault corruption concern; two-vault model becomes primary section
+- `README.md` — contamination section rewritten; contents table and Related section updated with Kepano attribution and direct links
+
+---
+
 ## [1.0.0] — 2026-04-05
 
 Initial release.
